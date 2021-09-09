@@ -16,9 +16,8 @@ func main()  {
 		log.Fatalf("something went wrong %v", err)
 	}
 
-	for index, item := range res.Results {
+	for _, item := range res.Results {
 		log.Println("----------------")
-		log.Println("Artist:", item.ArtistName, index )
 		log.Println("Podcast Name:", item.TrackName )
 		log.Println("Feed URL:", item.FeedURL )
 
