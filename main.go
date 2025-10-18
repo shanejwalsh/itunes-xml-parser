@@ -6,28 +6,25 @@ import (
 	"log"
 )
 
-
-func main()  {
+func main() {
 	ias := itunes.NewItunesApiServices()
 
 	res, err := ias.Search("Random Trek")
 
-	if (err != nil)  {
+	if err != nil {
 		log.Fatalf("something went wrong %v", err)
 	}
 
 	for _, item := range res.Results {
-		log.Println("----------------")
-		log.Println("Podcast Name:", item.TrackName )
-		log.Println("Feed URL:", item.FeedURL )
-
+		// log.Println("----------------")
+		// log.Println("Podcast Name:", item.TrackName )
+		// log.Println("Feed URL:", item.FeedURL )
 
 		feed, err := feeds.GetFeed(item.FeedURL)
 
 		if err != nil {
 			log.Fatalf("error: %s", err)
 		}
-
 
 		for _, pod := range feed.Channel.Item {
 
@@ -36,6 +33,6 @@ func main()  {
 			log.Printf("URL: %s", pod.Enclosure.URL)
 
 		}
-		log.Println("rest:", item )
+		log.Println("rest:", item)
 	}
-};
+}

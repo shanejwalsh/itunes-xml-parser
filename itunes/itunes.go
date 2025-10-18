@@ -7,13 +7,7 @@ import (
 	"time"
 )
 
-type ItunesApiServices struct {}
-
-	func NewItunesApiServices() *ItunesApiServices {
-		return &ItunesApiServices{}
-	}
-
-	type SearchResponse struct {
+type SearchResponse struct {
 	ResultCount int `json:"resultCount"`
 	Results     []struct {
 		WrapperType            string    `json:"wrapperType"`
@@ -53,36 +47,39 @@ type ItunesApiServices struct {}
 	} `json:"results"`
 }
 
-	func(ias *ItunesApiServices) Search(term string) (SearchResponse, error) {
+type ItunesApiServices struct{}
 
+func NewItunesApiServices() *ItunesApiServices {
+	return &ItunesApiServices{}
+}
 
+func (ias *ItunesApiServices) Search(term string) (SearchResponse, error) {
 
-
-		searchUrl := url.URL{
-			Scheme: "https",
-			Host: "itunes.apple.com",
-			Path: "search",
-		}
-
-		query := searchUrl.Query()
-
-		query.Set("entity", "podcast")
-		query.Set("term", term)
-
-		searchUrl.RawQuery = query.Encode()
-
-		res, err := http.Get(searchUrl.String())
-
-		if err != nil {
-			return SearchResponse{}, err
-		}
-
-		defer res.Body.Close()
-
-		var searchResponse SearchResponse
-
-		err = json.NewDecoder(res.Body).Decode(&searchResponse)
-
-		return searchResponse, err
-
+	searchUrl := url.URL{
+		Scheme: "https",
+		Host:   "itunes.apple.com",
+		Path:   "search",
 	}
+
+	query := searchUrl.Query()
+
+	query.Set("entity", "podcast")
+	query.Set("term", term)
+
+	searchUrl.RawQuery = query.Encode()
+
+	res, err := http.Get(searchUrl.String())
+
+	if err != nil {
+		return SearchResponse{}, err
+	}
+
+	defer res.Body.Close()
+
+	var searchResponse SearchResponse
+
+	err = json.NewDecoder(res.Body).Decode(&searchResponse)
+
+	return searchResponse, err
+
+}
