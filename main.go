@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"itunes-xml-parser/feeds"
-	"itunes-xml-parser/itunes"
 	"log"
+
+	"github.com/shanejwalsh/itunes-xml-parser/feeds"
+	"github.com/shanejwalsh/itunes-xml-parser/itunes"
 )
 
 func main() {
