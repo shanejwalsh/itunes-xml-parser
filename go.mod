@@ -1,3 +1,3 @@
-module github.com/shanejwalsh/starhane-fm-server
+module github.com/shanejwalsh/itunes-xml-parser
 
 go 1.17
