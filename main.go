@@ -1,7 +1,7 @@
 package main
 
 import (
-	"itunes-xml-parser/feeds"
+	"encoding/json"
 	"itunes-xml-parser/itunes"
 	"log"
 )
@@ -9,30 +9,35 @@ import (
 func main() {
 	ias := itunes.NewItunesApiServices()
 
-	res, err := ias.Search("Random Trek")
+	res, err := ias.Search("My therapist ghosted me")
 
 	if err != nil {
 		log.Fatalf("something went wrong %v", err)
 	}
 
-	for _, item := range res.Results {
-		// log.Println("----------------")
-		// log.Println("Podcast Name:", item.TrackName )
-		// log.Println("Feed URL:", item.FeedURL )
-
-		feed, err := feeds.GetFeed(item.FeedURL)
-
-		if err != nil {
-			log.Fatalf("error: %s", err)
-		}
-
-		for _, pod := range feed.Channel.Item {
-
-			log.Println("------------------------")
-			log.Printf("title: %s", pod.Title)
-			log.Printf("URL: %s", pod.Enclosure.URL)
-
-		}
-		log.Println("rest:", item)
+	jsonBytes, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		log.Fatalf("error marshaling: %v", err)
 	}
+
+	log.Println(string(jsonBytes))
+
+	firstId := res.Results[0].CollectionID
+
+	log.Printf("Results: %d", len(res.Results))
+	log.Printf("Id Result: %d", res.Results[0].CollectionID)
+
+	res2, err2 := ias.FindById(firstId)
+
+	if err2 != nil {
+		log.Fatalf("something went wrong %v", err)
+	}
+
+	jsonBytes2, err := json.MarshalIndent(res2, "", "  ")
+	if err != nil {
+		log.Fatalf("error marshaling: %v", err)
+	}
+
+	log.Println(string(jsonBytes2))
+
 }
