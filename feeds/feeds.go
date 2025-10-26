@@ -5,6 +5,12 @@ import (
 	"net/http"
 )
 
+type RssFeedService struct{}
+
+func NewRssFeedService() *RssFeedService {
+	return &RssFeedService{}
+}
+
 type RSS struct {
 	XMLName    xml.Name `xml:"rss"`
 	Text       string   `xml:",chardata"`
@@ -118,10 +124,7 @@ type RSS struct {
 	} `xml:"channel"`
 }
 
-
-
-
-func GetFeed(feedUrl string) (RSS, error) {
+func (fs *RssFeedService) GetFeed(feedUrl string) (RSS, error) {
 
 	res, err := http.Get(feedUrl)
 
