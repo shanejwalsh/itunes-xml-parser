@@ -41,7 +41,9 @@ func main() {
 		log.Fatalf("something went wrong %v", err)
 	}
 
-	feedRes, err := feeds.GetFeed(feedUrl)
+	feedService := feeds.NewRssFeedService()
+
+	feedRes, err := feedService.GetFeed(feedUrl)
 
 	jsonBytes2, err := json.MarshalIndent(feedRes, "", "  ")
 	if err != nil {
