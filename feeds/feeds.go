@@ -1,4 +1,3 @@
-
 package feeds
 
 import (
@@ -10,6 +9,47 @@ type RssFeedService struct{}
 
 func NewRssFeedService() *RssFeedService {
 	return &RssFeedService{}
+}
+
+type Episode struct {
+	Text     string `xml:",chardata"`
+	Title    string `xml:"title"`
+	Link     string `xml:"link"`
+	Category string `xml:"category"`
+	Author   string `xml:"author"`
+	PubDate  string `xml:"pubDate"`
+	Guid     struct {
+		Text        string `xml:",chardata"`
+		IsPermaLink string `xml:"isPermaLink,attr"`
+	} `xml:"guid"`
+	Description string `xml:"description"`
+	Thumbnail   struct {
+		Text   string `xml:",chardata"`
+		URL    string `xml:"url,attr"`
+		Height string `xml:"height,attr"`
+		Width  string `xml:"width,attr"`
+	} `xml:"thumbnail"`
+	Total struct {
+		Text string `xml:",chardata"`
+		Thr  string `xml:"thr,attr"`
+	} `xml:"total"`
+	Content struct {
+		Text string `xml:",chardata"`
+		URL  string `xml:"url,attr"`
+		Type string `xml:"type,attr"`
+	} `xml:"content"`
+	Explicit  string `xml:"explicit"`
+	Subtitle  string `xml:"subtitle"`
+	Summary   string `xml:"summary"`
+	Keywords  string `xml:"keywords"`
+	OrigLink  string `xml:"origLink"`
+	Enclosure struct {
+		Text   string `xml:",chardata"`
+		URL    string `xml:"url,attr"`
+		Length string `xml:"length,attr"`
+		Type   string `xml:"type,attr"`
+	} `xml:"enclosure"`
+	OrigEnclosureLink string `xml:"origEnclosureLink"`
 }
 
 type RSS struct {
@@ -75,49 +115,10 @@ type RSS struct {
 			Text string `xml:",chardata"`
 			Href string `xml:"href,attr"`
 		} `xml:"image"`
-		Subtitle string `xml:"subtitle"`
-		Summary  string `xml:"summary"`
-		Item     []struct {
-			Text     string `xml:",chardata"`
-			Title    string `xml:"title"`
-			Link     string `xml:"link"`
-			Category string `xml:"category"`
-			Author   string `xml:"author"`
-			PubDate  string `xml:"pubDate"`
-			Guid     struct {
-				Text        string `xml:",chardata"`
-				IsPermaLink string `xml:"isPermaLink,attr"`
-			} `xml:"guid"`
-			Description string `xml:"description"`
-			Thumbnail   struct {
-				Text   string `xml:",chardata"`
-				URL    string `xml:"url,attr"`
-				Height string `xml:"height,attr"`
-				Width  string `xml:"width,attr"`
-			} `xml:"thumbnail"`
-			Total struct {
-				Text string `xml:",chardata"`
-				Thr  string `xml:"thr,attr"`
-			} `xml:"total"`
-			Content struct {
-				Text string `xml:",chardata"`
-				URL  string `xml:"url,attr"`
-				Type string `xml:"type,attr"`
-			} `xml:"content"`
-			Explicit  string `xml:"explicit"`
-			Subtitle  string `xml:"subtitle"`
-			Summary   string `xml:"summary"`
-			Keywords  string `xml:"keywords"`
-			OrigLink  string `xml:"origLink"`
-			Enclosure struct {
-				Text   string `xml:",chardata"`
-				URL    string `xml:"url,attr"`
-				Length string `xml:"length,attr"`
-				Type   string `xml:"type,attr"`
-			} `xml:"enclosure"`
-			OrigEnclosureLink string `xml:"origEnclosureLink"`
-		} `xml:"item"`
-		Credit struct {
+		Subtitle string    `xml:"subtitle"`
+		Summary  string    `xml:"summary"`
+		Item     []Episode `xml:"item"`
+		Credit   struct {
 			Text string `xml:",chardata"`
 			Role string `xml:"role,attr"`
 		} `xml:"credit"`
