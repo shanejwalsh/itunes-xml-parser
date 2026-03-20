@@ -59,6 +59,7 @@ type RSS struct {
 	Itunes     string   `xml:"itunes,attr"`
 	Feedburner string   `xml:"feedburner,attr"`
 	Version    string   `xml:"version,attr"`
+	Duration   string   `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd duration"`
 	Channel    struct {
 		Text  string `xml:",chardata"`
 		Title string `xml:"title"`
