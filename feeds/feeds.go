@@ -18,7 +18,6 @@ type Episode struct {
 	Category string `xml:"category"`
 	Author   string `xml:"author"`
 	PubDate  string `xml:"pubDate"`
-	Duration string `xml:"itunes duration"`
 	Guid     struct {
 		Text        string `xml:",chardata"`
 		IsPermaLink string `xml:"isPermaLink,attr"`
@@ -40,6 +39,7 @@ type Episode struct {
 		Type string `xml:"type,attr"`
 	} `xml:"content"`
 	Explicit  string `xml:"explicit"`
+	Duration  string `xml:"duration"`
 	Subtitle  string `xml:"subtitle"`
 	Summary   string `xml:"summary"`
 	Keywords  string `xml:"keywords"`
