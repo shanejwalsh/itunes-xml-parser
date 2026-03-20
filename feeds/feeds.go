@@ -18,6 +18,7 @@ type Episode struct {
 	Category string `xml:"category"`
 	Author   string `xml:"author"`
 	PubDate  string `xml:"pubDate"`
+	Duration string `xml:"itunes duration"`
 	Guid     struct {
 		Text        string `xml:",chardata"`
 		IsPermaLink string `xml:"isPermaLink,attr"`
@@ -59,7 +60,6 @@ type RSS struct {
 	Itunes     string   `xml:"itunes,attr"`
 	Feedburner string   `xml:"feedburner,attr"`
 	Version    string   `xml:"version,attr"`
-	Duration   string   `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd duration"`
 	Channel    struct {
 		Text  string `xml:",chardata"`
 		Title string `xml:"title"`
