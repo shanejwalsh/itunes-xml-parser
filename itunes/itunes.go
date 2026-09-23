@@ -1,12 +1,32 @@
+// Package itunes is a client for the iTunes Search API.
 package itunes
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 )
+
+// DefaultBaseURL is the iTunes Search API root.
+const DefaultBaseURL = "https://itunes.apple.com"
+
+// HTTPError is returned when the API responds with a non-2xx status. Without
+// it a 403 or 503 HTML error page reaches the JSON decoder and surfaces as a
+// confusing syntax error.
+type HTTPError struct {
+	StatusCode int
+	Status     string
+	URL        string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("itunes: GET %s: %s", e.URL, e.Status)
+}
 
 type Result struct {
 	WrapperType            string    `json:"wrapperType"`
@@ -50,68 +70,130 @@ type SearchResponse struct {
 	Results     []Result `json:"results"`
 }
 
-type ItunesApiServices struct{}
+// Option configures an ItunesApiServices.
+type Option func(*ItunesApiServices)
 
-func NewItunesApiServices() *ItunesApiServices {
-	return &ItunesApiServices{}
+// WithHTTPClient makes the service issue requests with c rather than
+// http.DefaultClient, which has no timeout.
+func WithHTTPClient(c *http.Client) Option {
+	return func(ias *ItunesApiServices) {
+		if c != nil {
+			ias.client = c
+		}
+	}
 }
 
+// WithBaseURL points the service at a different root, which is mainly useful
+// for testing against an httptest server.
+func WithBaseURL(baseURL string) Option {
+	return func(ias *ItunesApiServices) {
+		if baseURL != "" {
+			ias.baseURL = baseURL
+		}
+	}
+}
+
+// ItunesApiServices is a client for the iTunes Search API.
+type ItunesApiServices struct {
+	client  *http.Client
+	baseURL string
+}
+
+// NewItunesApiServices returns a client configured by opts.
+func NewItunesApiServices(opts ...Option) *ItunesApiServices {
+	ias := &ItunesApiServices{
+		client:  http.DefaultClient,
+		baseURL: DefaultBaseURL,
+	}
+	for _, opt := range opts {
+		opt(ias)
+	}
+	return ias
+}
+
+// SearchParams are the query parameters for a search. Zero-valued fields are
+// omitted, except Entity which defaults to "podcast".
+type SearchParams struct {
+	Term string
+	// Entity defaults to "podcast".
+	Entity string
+	// Limit caps the number of results. iTunes accepts 1-200 and defaults to
+	// 50. Values outside that range are ignored.
+	Limit int
+	// Country is a two-letter store code, e.g. "GB". Results are
+	// store-specific, so this changes what comes back.
+	Country string
+}
+
+func (p SearchParams) values() url.Values {
+	entity := p.Entity
+	if entity == "" {
+		entity = "podcast"
+	}
+
+	query := url.Values{}
+	query.Set("entity", entity)
+	query.Set("term", p.Term)
+	if p.Limit > 0 && p.Limit <= 200 {
+		query.Set("limit", strconv.Itoa(p.Limit))
+	}
+	if p.Country != "" {
+		query.Set("country", p.Country)
+	}
+	return query
+}
+
+// SearchWithContext searches the iTunes catalogue.
+func (ias *ItunesApiServices) SearchWithContext(ctx context.Context, params SearchParams) (SearchResponse, error) {
+	return ias.get(ctx, "/search", params.values())
+}
+
+// Search searches for podcasts by term, without a deadline.
+// Prefer SearchWithContext.
 func (ias *ItunesApiServices) Search(term string) (SearchResponse, error) {
-
-	searchUrl := url.URL{
-		Scheme: "https",
-		Host:   "itunes.apple.com",
-		Path:   "search",
-	}
-
-	query := searchUrl.Query()
-
-	query.Set("entity", "podcast")
-	query.Set("term", term)
-
-	searchUrl.RawQuery = query.Encode()
-
-	res, err := http.Get(searchUrl.String())
-
-	if err != nil {
-		return SearchResponse{}, err
-	}
-
-	defer res.Body.Close()
-
-	var searchResponse SearchResponse
-
-	err = json.NewDecoder(res.Body).Decode(&searchResponse)
-
-	return searchResponse, err
-
+	return ias.SearchWithContext(context.Background(), SearchParams{Term: term})
 }
 
+// FindByIdWithContext looks a single item up by its iTunes ID.
+func (ias *ItunesApiServices) FindByIdWithContext(ctx context.Context, id int) (SearchResponse, error) {
+	return ias.get(ctx, "/lookup", url.Values{"id": {strconv.Itoa(id)}})
+}
+
+// FindById looks a single item up by its iTunes ID, without a deadline.
+// Prefer FindByIdWithContext.
 func (ias *ItunesApiServices) FindById(id int) (SearchResponse, error) {
+	return ias.FindByIdWithContext(context.Background(), id)
+}
 
-	searchUrl := url.URL{
-		Scheme: "https",
-		Host:   "itunes.apple.com",
-		Path:   "lookup",
+func (ias *ItunesApiServices) get(ctx context.Context, path string, query url.Values) (SearchResponse, error) {
+	endpoint, err := url.Parse(ias.baseURL)
+	if err != nil {
+		return SearchResponse{}, fmt.Errorf("itunes: invalid base URL %q: %w", ias.baseURL, err)
 	}
+	endpoint.Path += path
+	endpoint.RawQuery = query.Encode()
 
-	query := searchUrl.Query()
-
-	query.Set("id", strconv.Itoa(id))
-	searchUrl.RawQuery = query.Encode()
-
-	res, err := http.Get(searchUrl.String())
-
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
 		return SearchResponse{}, err
 	}
+	req.Header.Set("Accept", "application/json")
 
+	res, err := ias.client.Do(req)
+	if err != nil {
+		return SearchResponse{}, err
+	}
 	defer res.Body.Close()
 
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		// Drain a little so the connection can be reused, then discard.
+		_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 4<<10))
+		return SearchResponse{}, &HTTPError{StatusCode: res.StatusCode, Status: res.Status, URL: endpoint.String()}
+	}
+
 	var searchResponse SearchResponse
-
-	err = json.NewDecoder(res.Body).Decode(&searchResponse)
-
-	return searchResponse, err
-
+	if err := json.NewDecoder(res.Body).Decode(&searchResponse); err != nil {
+		return SearchResponse{}, fmt.Errorf("itunes: decoding response from %s: %w", endpoint.String(), err)
+	}
+	return searchResponse, nil
 }
